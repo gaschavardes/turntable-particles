@@ -3,7 +3,6 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass.js'
 import { StarsMaterial } from '../materials'
-import TouchTexture from '../components/TouchTexture'
 import WaterTexture from '../components/WaterTexture'
 import store from '../store'
 import { E } from '../utils'
@@ -52,7 +51,6 @@ export default class MainScene extends Scene {
 	}
 
 	build() {
-		this.touchTexture = new TouchTexture()
 		this.waterTexture = new WaterTexture({ debug: true })
 		this.buildInstance()
 		this.setTimeline()
