@@ -31,6 +31,7 @@ export default class MainScene extends Scene {
 		this.dampedProgressCamera = 0
 		this.originalMatrix = []
 		this.randomVal = []
+		this.animationsProgress = []
 		this.color1 = '#ff1400'
 		this.color2 = '#0044ff'
 		this.dummy = new Object3D()
@@ -58,6 +59,7 @@ export default class MainScene extends Scene {
 		this.waterTexture = new WaterTexture({ debug: true })
 		this.buildInstance()
 		this.setTimeline()
+		this.setBlinkingAnim(39)
 	}
 
 	setTimeline() {
@@ -122,10 +124,14 @@ export default class MainScene extends Scene {
 
 			this.originalMatrix.push(matrix.clone())
 			this.randomVal.push(Math.random() * 4 + 2)
+			this.animationsProgress.push(0)
 			this.instanceMesh.setMatrixAt(i, matrix)
 		}
 		const randomArray = new Float32Array(this.randomVal)
+		const animationProgress = new Float32Array(this.animationsProgress)
 		this.instanceMesh.geometry.setAttribute('randomVal', new InstancedBufferAttribute(randomArray, 1))
+		this.instanceMesh.geometry.setAttribute('animationProgress', new InstancedBufferAttribute(animationProgress, 1))
+		this.instanceMesh.geometry.attributes.animationProgress.needsUpdate = true
 		console.log(this.suzanneSphere.geometry)
 		this.instanceMesh.geometry.setAttribute('spherePosition', this.suzanneSphere.geometry.attributes.position)
 		this.add(this.instanceMesh)
@@ -354,6 +360,28 @@ export default class MainScene extends Scene {
 		boneTexture.needsUpdate = true
 		console.log('BONE TEXTURE', boneTexture)
 		console.log(this.material.uniforms.uJointTexture.value = boneTexture)
+	}
+
+	setBlinkingAnim(id) {
+		this.blinkValue = 0
+		gsap.to(this, {
+			blinkValue: Math.PI,
+			// yoyo: true,
+			onUpdate: () => {
+				// console.log(this.blinkValue)
+				this.instanceMesh.geometry.attributes.animationProgress.array.forEach((el, i) => {
+					if (i % id === 0) {
+						// console.log(i)
+						this.instanceMesh.geometry.attributes.animationProgress.setX(i, Math.sin(this.blinkValue))
+					}
+				})
+				this.instanceMesh.geometry.attributes.animationProgress.needsUpdate = true
+			},
+			onComplete: () => {
+				this.setBlinkingAnim(Math.round(Math.random() * 50 + 50))
+				// console.log(this.instanceMesh.geometry.attributes.animationProgress)
+			}
+		})
 	}
 
 	calculateInverses() {

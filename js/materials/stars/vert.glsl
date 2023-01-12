@@ -8,6 +8,7 @@ in mat4 instanceMatrix;
 in vec4 skinIndex;
 in vec4 skinWeight;
 in float randomVal;
+in float animationProgress;
 in vec4 spherePosition;
 
 uniform vec2 uTextureSize;
@@ -68,7 +69,7 @@ mat4 translationMatrix(vec3 axis)
 
 void main()	{
     #include <normalsVert>
-	vec3 transformed = mix(vec3(position), vec3(spherePosition), 0.);
+	vec3 transformed = mix(vec3(position), vec3(spherePosition), animationProgress);
 	vec3 matrixPos = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]);
 	vUv = uv;
 	vec2 puv = matrixPos.xy / (15.);
