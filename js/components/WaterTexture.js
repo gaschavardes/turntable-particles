@@ -15,9 +15,9 @@ export default class WaterTexture {
 	constructor(options) {
 		this.size = 64
 		this.points = []
-		this.radius = this.size * 0.05
+		this.radius = this.size * 0.1
 		this.width = this.height = this.size
-		this.maxAge = 100
+		this.maxAge = 150
 		this.last = null
 		this.rect = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight }
 
@@ -87,7 +87,7 @@ export default class WaterTexture {
 		const agePart = 1 / this.maxAge
 		this.points.forEach((point, i) => {
 			const slowAsOlder = 1 - point.age / this.maxAge
-			const force = point.force * agePart * slowAsOlder
+			const force = point.force * agePart * slowAsOlder * 0.5
 			point.x += point.vx * force
 			point.y += point.vy * force
 			point.age += 1

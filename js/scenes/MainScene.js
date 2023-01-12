@@ -121,7 +121,7 @@ export default class MainScene extends Scene {
 			offset.push(z)
 
 			this.originalMatrix.push(matrix.clone())
-			this.randomVal.push(Math.random() * 2 + 1)
+			this.randomVal.push(Math.random() * 4 + 2)
 			this.instanceMesh.setMatrixAt(i, matrix)
 		}
 		const randomArray = new Float32Array(this.randomVal)
@@ -137,12 +137,15 @@ export default class MainScene extends Scene {
 		const rotation = new Euler()
 		const quaternion = new Quaternion()
 		const scale = new Vector3()
-		const radius = Math.random() * 3
-		const angle = Math.random() * Math.PI * 2 - Math.PI
+		const radius = Math.random() * 1 + 2
+		// const angle = Math.random() * Math.PI * 2 - Math.PI
 
-		position.x = radius * Math.cos(angle)
-		position.y = radius * Math.sin(angle)
-		position.z = 0
+		const theta = MathUtils.randFloatSpread(360)
+		const phi = MathUtils.randFloatSpread(360)
+
+		position.x = radius * Math.sin(theta) * Math.cos(phi)
+		position.y = radius * Math.sin(theta) * Math.sin(phi)
+		position.z = radius * Math.cos(theta)
 
 		rotation.x = Math.random() * 2 * Math.PI
 		rotation.y = Math.random() * 2 * Math.PI
