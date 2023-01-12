@@ -17,8 +17,12 @@ export default class StarsMaterial extends RawShaderMaterial {
 				uSize: { value: 10 },
 				displaceText: { value: options.displaceText },
 				uTextureSize: { value: options.uTextureSize },
-				uTime: { value: 0 }
-
+				uTime: { value: 0 },
+				boneTextureSize: { value: options.boneTextureSize },
+				uTexture: { value: options.uTexture },
+				bindMatrix: { value: options.bindMatrix },
+				bindMatrixInverse: { value: options.bindMatrixInverse },
+				uJointTexture: { value: options.u_jointTexture }
 			}
 		})
 	}

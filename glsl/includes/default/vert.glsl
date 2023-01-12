@@ -7,7 +7,7 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat3 normalMatrix;
 
-attribute vec3 position;
-attribute vec3 normal;
-attribute vec2 uv;
-attribute vec3 color;
+in vec3 position;
+in vec3 normal;
+in vec2 uv;
+in vec3 color;

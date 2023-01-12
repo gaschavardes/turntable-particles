@@ -2,6 +2,7 @@ import store from '../store'
 import { E } from './'
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { TextureLoader } from 'three'
 
 /**
@@ -18,10 +19,12 @@ export default class AssetLoader {
 
 		this.jsons = {}
 		this.gltfs = {}
+		this.fbxs = {}
 		this.textures = {}
 
 		this.textureLoader = new TextureLoader()
 		this.gltfLoader = new GLTFLoader()
+		this.fbxLoader = new FBXLoader()
 	}
 
 	load = ({ element = document.body, progress = true } = {}) => {
@@ -150,6 +153,19 @@ export default class AssetLoader {
 		}
 
 		return this.gltfs[url]
+	}
+
+	loadFbx = (url) => {
+		console.log(url)
+		if (!this.fbxs[url]) {
+			this.fbxs[url] = this.add(new Promise((resolve, reject) => {
+				this.fbxLoader.load(url, fbx => {
+					resolve(fbx)
+				}, undefined, reject)
+			}))
+		}
+
+		return this.fbxs[url]
 	}
 
 	loadTexture = (url, options) => {
