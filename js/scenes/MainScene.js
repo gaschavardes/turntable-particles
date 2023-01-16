@@ -293,18 +293,18 @@ export default class MainScene extends Scene {
 		}
 
 		for (const key in fbx) {
-			store.AssetLoader.loadFbx((`public/models/${fbx[key]}`)).then(fbx => {
+			store.AssetLoader.loadFbx((`models/${fbx[key]}`)).then(fbx => {
 				this.assets.models[key] = fbx
 			})
 		}
 
 		for (const key in anim) {
-			store.AssetLoader.loadFbx((`public/models/${anim[key]}`)).then(fbx => {
+			store.AssetLoader.loadFbx((`models/${anim[key]}`)).then(fbx => {
 				this.assets.models[key] = fbx
 			})
 		}
 		for (const key in glb) {
-			store.AssetLoader.loadGltf((`public/models/${glb[key]}`)).then((gltf, animation) => {
+			store.AssetLoader.loadGltf((`models/${glb[key]}`)).then((gltf, animation) => {
 				console.log(key, gltf)
 				this.assets.models[key] = gltf
 				if (gltf.parser.json.buffers[0].uri) {
@@ -313,7 +313,7 @@ export default class MainScene extends Scene {
 			})
 		}
 		for (const key in texture) {
-			store.AssetLoader.loadTexture((`public/texture/${texture[key]}`)).then(texture => {
+			store.AssetLoader.loadTexture((`texture/${texture[key]}`)).then(texture => {
 				this.assets.textures[key] = texture
 			})
 		}
