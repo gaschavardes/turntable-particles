@@ -41,7 +41,9 @@ document.addEventListener('click', () => {
 				if (response === 'granted') {
 					window.addEventListener('devicemotion', (e) => {
 						store.progress += (e.rotationRate.gamma * (Math.PI / 360)) / 57.32
+						// console.log('GAMMA ROTATE', store.progress)
 						store.motion = e
+						store.acceleration = e.acceleration
 					})
 				}
 			})

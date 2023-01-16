@@ -8,8 +8,8 @@ export default class StarsMaterial extends RawShaderMaterial {
 		super({
 			vertexShader,
 			fragmentShader,
-			depthWrite: false,
-			depthTest: false,
+			depthWrite: true,
+			depthTest: true,
 			transparent: true,
 			opacity: 0.1,
 			uniforms: {
@@ -22,7 +22,9 @@ export default class StarsMaterial extends RawShaderMaterial {
 				uTexture: { value: options.uTexture },
 				bindMatrix: { value: options.bindMatrix },
 				bindMatrixInverse: { value: options.bindMatrixInverse },
-				uJointTexture: { value: options.u_jointTexture }
+				uJointTexture: { value: options.u_jointTexture },
+				uAcceleration: { value: options.uAcceleration },
+				uRotateState: { value: options.uRotateState }
 			}
 		})
 	}

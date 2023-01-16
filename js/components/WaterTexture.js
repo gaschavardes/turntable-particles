@@ -17,7 +17,7 @@ export default class WaterTexture {
 		this.points = []
 		this.radius = this.size * 0.1
 		this.width = this.height = this.size
-		this.maxAge = 150
+		this.maxAge = 100
 		this.last = null
 		this.rect = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight }
 

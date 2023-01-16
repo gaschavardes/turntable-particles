@@ -27,6 +27,8 @@ export default class MainScene extends Scene {
 		this.randomVal = 10
 		this.hole = 0
 		this.randomArray = []
+		this.angleArray = []
+		this.posArray = []
 		this.dampedProgress = 0
 		this.dampedProgressCamera = 0
 		this.originalMatrix = []
@@ -35,6 +37,7 @@ export default class MainScene extends Scene {
 		this.color1 = '#ff1400'
 		this.color2 = '#0044ff'
 		this.dummy = new Object3D()
+		this.targetAcceleration = new Vector3()
 		E.on('App:start', () => {
 			this.build()
 			this.addEvents()
@@ -58,6 +61,7 @@ export default class MainScene extends Scene {
 	build() {
 		this.waterTexture = new WaterTexture({ debug: true })
 		this.buildInstance()
+		this.createRotatedMatrix()
 		this.setTimeline()
 		this.setBlinkingAnim(39)
 	}
@@ -94,6 +98,10 @@ export default class MainScene extends Scene {
 		this.suzanneSphere = this.assets.models.suzanneSphere.scene.children[0]
 		// this.getPositionAttribute(this.suzanneSphere.geometry)
 
+		const rotateMatrix = new Float32Array(16)
+		const rotateTexture = new DataTexture(rotateMatrix, this.size, this.size, RGBAFormat, FloatType)
+		rotateTexture.needsUpdate = true
+
 		this.computeBoneTexture()
 		const geometry = this.mesh.geometry
 		this.material = new StarsMaterial({
@@ -105,10 +113,14 @@ export default class MainScene extends Scene {
 			bindMatrixInverse: this.mesh.bindMatrixInverse,
 			boneTextureSize: this.boneTextureSize,
 			u_jointTexture: this.boneTexture,
+			uRotateState: new Matrix4(),
+			uAcceleration: new Vector3(),
 			uTime: 0
 		})
 		const offset = []
+		const rotateState = []
 		this.instanceMesh = new InstancedMesh(this.suzanne.geometry, this.material, this.count)
+		console.log(this.instanceMesh, new Matrix4())
 		for (let i = 0; i < this.count; i++) {
 			// PUT THEM IN GRID
 			const space = 2
@@ -123,16 +135,19 @@ export default class MainScene extends Scene {
 			offset.push(z)
 
 			this.originalMatrix.push(matrix.clone())
-			this.randomVal.push(Math.random() * 4 + 2)
+			this.randomVal.push(Math.random() * 1 - 0.5 + 0.1)
 			this.animationsProgress.push(0)
+			rotateState.push(...rotateMatrix)
 			this.instanceMesh.setMatrixAt(i, matrix)
 		}
 		const randomArray = new Float32Array(this.randomVal)
 		const animationProgress = new Float32Array(this.animationsProgress)
+		const rotatePosMatrix = new Float32Array(rotateState)
 		this.instanceMesh.geometry.setAttribute('randomVal', new InstancedBufferAttribute(randomArray, 1))
 		this.instanceMesh.geometry.setAttribute('animationProgress', new InstancedBufferAttribute(animationProgress, 1))
+		console.log(rotateState)
+		this.instanceMesh.geometry.setAttribute('rotatePos', new InstancedBufferAttribute(rotatePosMatrix, 16))
 		this.instanceMesh.geometry.attributes.animationProgress.needsUpdate = true
-		console.log(this.suzanneSphere.geometry)
 		this.instanceMesh.geometry.setAttribute('spherePosition', this.suzanneSphere.geometry.attributes.position)
 		this.add(this.instanceMesh)
 		// this.updateAnim(0)
@@ -143,12 +158,12 @@ export default class MainScene extends Scene {
 		const rotation = new Euler()
 		const quaternion = new Quaternion()
 		const scale = new Vector3()
-		const radius = Math.random() * 1 + 2
+		const radius = Math.random() * 2
 		// const angle = Math.random() * Math.PI * 2 - Math.PI
 
 		const theta = MathUtils.randFloatSpread(360)
 		const phi = MathUtils.randFloatSpread(360)
-
+		this.angleArray.push({ 'phi': phi, 'theta': theta })
 		position.x = radius * Math.sin(theta) * Math.cos(phi)
 		position.y = radius * Math.sin(theta) * Math.sin(phi)
 		position.z = radius * Math.cos(theta)
@@ -163,7 +178,7 @@ export default class MainScene extends Scene {
 		quaternion.setFromEuler(rotation)
 
 		scale.x = scale.y = scale.z = 0.2
-
+		this.posArray.push(position)
 		matrix.compose(position, quaternion, scale)
 		return matrix
 	}
@@ -179,16 +194,50 @@ export default class MainScene extends Scene {
 
 	onRaf = (time) => {
 		this.waterTexture.update()
-		this.controls.update()
+		// this.controls.update()
 		// this.touchTexture.update()
 		// const positions = this.points.geometry.attributes.position.array
 		// store.progress += 0.001
 		this.dampedProgress += (store.progress - this.dampedProgress) * 0.1
-		this.dampedProgressCamera += (store.progress - this.dampedProgress) * 0.001
+		this.dampedProgressCamera += (store.progress - this.dampedProgress) * 0.15
 		this.radius = 60 + this.dampedProgress * 1
-		store.progress += 0.02
+		// store.progress += 0.02
+		// console.log(this.dampedProgressCamera)
 
-		const matrix = new Matrix4()
+		if (store.acceleration) {
+			let tmp = new Vector3()
+
+			const actualAcc = new Vector3(store.acceleration.x, store.acceleration.y, store.acceleration.z)
+			actualAcc.multiplyScalar(5)
+			tmp = actualAcc.sub(this.targetAcceleration)
+			tmp.multiplyScalar(0.1)
+			this.targetAcceleration.add(tmp)
+
+			this.instanceMesh.material.uniforms.uAcceleration.value = this.targetAcceleration
+		}
+
+		if (!store.motion) {
+			// for (let i = 0; i < this.count; i++) {
+			// 	this.originalMatrix[i].decompose(this.dummy.position, this.dummy.rotation, this.dummy.scale)
+			// 	this.dummy.position.x += Math.sin(time) * this.randomVal[i]
+			// 	this.dummy.position.y += Math.sin(time) * this.randomVal[i]
+			// 	this.dummy.position.z += Math.sin(time) * this.randomVal[i]
+			// 	this.dummy.updateMatrix()
+			// 	this.instanceMesh.setMatrixAt(i, this.dummy.matrix)
+			// 	// this.instanceMesh.getMatrixAt(i, matrix)
+			// }
+		} else {
+			// for (let i = 0; i < this.count; i++) {
+			// 	this.originalMatrix[i].decompose(this.dummy.position, this.dummy.rotation, this.dummy.scale)
+			// 	this.dummy.position.x += store.acceleration.x * 0.1 * this.randomVal[i]
+			// 	this.dummy.position.y += store.acceleration.y * 0.1 * this.randomVal[i]
+			// 	this.dummy.position.z += store.acceleration.z * 0.1 * this.randomVal[i]
+			// 	console.log(store.acceleration.x)
+			// 	this.dummy.updateMatrix()
+			// 	this.instanceMesh.setMatrixAt(i, this.dummy.matrix)
+			// 	this.instanceMesh.getMatrixAt(i, matrix)
+			// }
+		}
 
 		this.instanceMesh.instanceMatrix.needsUpdate = true
 		this.instanceMesh.material.uniforms.uTime.value = time
@@ -212,6 +261,8 @@ export default class MainScene extends Scene {
 		if (boneTexture !== null) {
 			boneTexture.needsUpdate = true
 		}
+
+		store.camera.rotation.set(0, 0, this.dampedProgressCamera * 1.5)
 	}
 
 	onResize = () => {
@@ -242,18 +293,18 @@ export default class MainScene extends Scene {
 		}
 
 		for (const key in fbx) {
-			store.AssetLoader.loadFbx((`models/${fbx[key]}`)).then(fbx => {
+			store.AssetLoader.loadFbx((`public/models/${fbx[key]}`)).then(fbx => {
 				this.assets.models[key] = fbx
 			})
 		}
 
 		for (const key in anim) {
-			store.AssetLoader.loadFbx((`models/${anim[key]}`)).then(fbx => {
+			store.AssetLoader.loadFbx((`public/models/${anim[key]}`)).then(fbx => {
 				this.assets.models[key] = fbx
 			})
 		}
 		for (const key in glb) {
-			store.AssetLoader.loadGltf((`models/${glb[key]}`)).then((gltf, animation) => {
+			store.AssetLoader.loadGltf((`public/models/${glb[key]}`)).then((gltf, animation) => {
 				console.log(key, gltf)
 				this.assets.models[key] = gltf
 				if (gltf.parser.json.buffers[0].uri) {
@@ -262,7 +313,7 @@ export default class MainScene extends Scene {
 			})
 		}
 		for (const key in texture) {
-			store.AssetLoader.loadTexture((`texture/${texture[key]}`)).then(texture => {
+			store.AssetLoader.loadTexture((`public/texture/${texture[key]}`)).then(texture => {
 				this.assets.textures[key] = texture
 			})
 		}
@@ -297,7 +348,6 @@ export default class MainScene extends Scene {
 
 	computeBoneTexture() {
 		this.boneMatrices = new Float32Array(this.bones.length * 16)
-		console.log(this.boneMatrices)
 		// layout (1 matrix = 4 pixels)
 		//      RGBA RGBA RGBA RGBA (=> column1, column2, column3, column4)
 		//  with  8x8  pixel texture max   16 bones * 4 pixels =  (8 * 8)
@@ -311,23 +361,19 @@ export default class MainScene extends Scene {
 		this.size = size
 		const boneMatrices = new Float32Array(size * size * 4) // 4 floats per RGBA pixel
 		boneMatrices.set(this.boneMatrices) // copy current values
-		console.log('KIKOUUU', boneMatrices)
 		const boneTexture = new DataTexture(boneMatrices, size, size, RGBAFormat, FloatType)
 		boneTexture.needsUpdate = true
 
 		this.boneMatrices = boneMatrices
 		this.boneTexture = boneTexture
 		this.boneTextureSize = size
-		console.log('BONE TEXTURE', boneTexture)
 
 		return this
 	}
 
 	updateAnim(id) {
-		console.log(this.assets.models.whale.animations[0])
 		const animation = this.assets.models.whale.animations[1]
 		this.tempMatrix = []
-		console.log(this.tempMatrix)
 		this.bones.forEach((el, i) => {
 			const position = new Vector3()
 			const quaternion = new Quaternion()
@@ -336,7 +382,6 @@ export default class MainScene extends Scene {
 			position.x = animation.tracks[i * 3].values[id]
 			position.y = animation.tracks[i * 3].values[id + 1]
 			position.z = animation.tracks[i * 3].values[id + 2]
-			console.log(position)
 			if (animation.tracks[(i + 1) * 3]) {
 				quaternion.w = animation.tracks[(i + 1) * 3].values[id]
 				quaternion.x = animation.tracks[(i + 1) * 3].values[id + 1]
@@ -348,18 +393,44 @@ export default class MainScene extends Scene {
 				scale.y = animation.tracks[(i + 2) * 3].values[id + 1]
 				scale.z = animation.tracks[(i + 2) * 3].values[id + 2]
 			}
-			console.log(position, quaternion, scale)
 			matrix.compose(position, quaternion, scale)
-			console.log(matrix)
 			this.tempMatrix.push(...matrix.elements)
 		})
 		const boneMatrices = new Float32Array(this.size * this.size * 4)
 		boneMatrices.set(this.tempMatrix)
-		console.log(boneMatrices)
 		const boneTexture = new DataTexture(boneMatrices, this.size, this.size, RGBAFormat, FloatType)
 		boneTexture.needsUpdate = true
-		console.log('BONE TEXTURE', boneTexture)
-		console.log(this.material.uniforms.uJointTexture.value = boneTexture)
+	}
+
+	createRotatedMatrix() {
+		this.tempMatrix = []
+		for (let id = 0; id < this.count; id++) {
+			const position = new Vector3()
+			const quaternion = new Quaternion()
+			const scale = new Vector3()
+			const matrix = new Matrix4()
+
+			const radius = (id % 3 + 1) + 0.5
+			position.x = radius * Math.cos(this.angleArray[id].phi)
+			position.y = radius * Math.sin(this.angleArray[id].phi)
+			position.z = this.posArray[id].z
+
+			quaternion.w = 0
+			quaternion.x = 0
+			quaternion.y = 0
+			quaternion.z = 0
+
+			scale.x = 1
+			scale.y = 1
+			scale.z = 1
+			matrix.compose(position, quaternion, scale)
+			this.tempMatrix.push(...matrix.elements)
+		}
+		const rotatePosMatrix = new Float32Array(this.tempMatrix)
+		console.log(rotatePosMatrix)
+		this.instanceMesh.geometry.attributes.rotatePos.set(rotatePosMatrix)
+		this.instanceMesh.geometry.attributes.rotatePos.needsUpdate = true
+		console.log(this.instanceMesh.geometry.attributes.rotatePos)
 	}
 
 	setBlinkingAnim(id) {
@@ -368,10 +439,8 @@ export default class MainScene extends Scene {
 			blinkValue: Math.PI,
 			// yoyo: true,
 			onUpdate: () => {
-				// console.log(this.blinkValue)
 				this.instanceMesh.geometry.attributes.animationProgress.array.forEach((el, i) => {
 					if (i % id === 0) {
-						// console.log(i)
 						this.instanceMesh.geometry.attributes.animationProgress.setX(i, Math.sin(this.blinkValue))
 					}
 				})
@@ -379,7 +448,6 @@ export default class MainScene extends Scene {
 			},
 			onComplete: () => {
 				this.setBlinkingAnim(Math.round(Math.random() * 50 + 50))
-				// console.log(this.instanceMesh.geometry.attributes.animationProgress)
 			}
 		})
 	}
@@ -395,11 +463,6 @@ export default class MainScene extends Scene {
 			}
 
 			this.boneInverses.push(inverse)
-			console.log(this.boneInverses)
 		}
 	}
-
-	// getPositionAttribute(geometry) {
-	// 	const position = []
-	// }
 }
