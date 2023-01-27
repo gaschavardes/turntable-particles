@@ -39,8 +39,6 @@ export default class SpaceScene extends Scene {
 
 	onRaf = (time) => {
 		this.torus.rotation.set(0, time * 2, 0)
-		// this.controls.update()
-		// this.composer.render()
 		// store.WebGL.starRenderer.render(this, store.camera)
 	}
 

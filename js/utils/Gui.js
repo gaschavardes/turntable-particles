@@ -27,12 +27,5 @@ export class Gui extends Pane {
 			color1: store.MainScene.color1,
 			color2: store.MainScene.color2
 		}
-		this.addInput(this.options.stars, 'color1', {
-			color1: {type: 'float'},
-			color2: {type: 'float'},
-		})
-		this.addInput(this.options.stars, 'color2', {
-			
-		})
 	}
 }

@@ -21,7 +21,7 @@ export default class MainScene extends Scene {
 		this.count = 5000
 		this.size = 0.05
 		this.spread = 15
-		this.radius = 5
+		this.radius = 10
 		this.spin = 1
 		this.branches = 20
 		this.randomVal = 10
@@ -135,7 +135,7 @@ export default class MainScene extends Scene {
 			offset.push(z)
 
 			this.originalMatrix.push(matrix.clone())
-			this.randomVal.push(Math.random() * 1 - 0.5 + 0.1)
+			this.randomVal.push(Math.random() * 1 + 0.1)
 			this.animationsProgress.push(0)
 			rotateState.push(...rotateMatrix)
 			this.instanceMesh.setMatrixAt(i, matrix)
@@ -158,16 +158,16 @@ export default class MainScene extends Scene {
 		const rotation = new Euler()
 		const quaternion = new Quaternion()
 		const scale = new Vector3()
-		const radius = Math.random() * 2
+		const radius = Math.random() * 3
 		// const angle = Math.random() * Math.PI * 2 - Math.PI
 
 		const theta = MathUtils.randFloatSpread(360)
 		const phi = MathUtils.randFloatSpread(360)
-		this.angleArray.push({ 'phi': phi, 'theta': theta })
+		// this.angleArray.push({ 'x': phi, 'y': theta })
 		position.x = radius * Math.sin(theta) * Math.cos(phi)
 		position.y = radius * Math.sin(theta) * Math.sin(phi)
 		position.z = radius * Math.cos(theta)
-
+		this.angleArray.push({ 'x': position.x, 'y': position.y })
 		rotation.x = Math.random() * 2 * Math.PI
 		rotation.y = Math.random() * 2 * Math.PI
 		rotation.z = Math.random() * 2 * Math.PI
@@ -194,7 +194,7 @@ export default class MainScene extends Scene {
 
 	onRaf = (time) => {
 		this.waterTexture.update()
-		// this.controls.update()
+		this.controls.update()
 		// this.touchTexture.update()
 		// const positions = this.points.geometry.attributes.position.array
 		// store.progress += 0.001
@@ -208,6 +208,7 @@ export default class MainScene extends Scene {
 			let tmp = new Vector3()
 
 			const actualAcc = new Vector3(store.acceleration.x, store.acceleration.y, store.acceleration.z)
+			console.log(Math.round(store.acceleration.x))
 			actualAcc.multiplyScalar(5)
 			tmp = actualAcc.sub(this.targetAcceleration)
 			tmp.multiplyScalar(0.1)
@@ -262,7 +263,7 @@ export default class MainScene extends Scene {
 			boneTexture.needsUpdate = true
 		}
 
-		store.camera.rotation.set(0, 0, this.dampedProgressCamera * 1.5)
+		// store.camera.rotation.set(0, 0, this.dampedProgressCamera * 1.5)
 	}
 
 	onResize = () => {
@@ -409,10 +410,12 @@ export default class MainScene extends Scene {
 			const quaternion = new Quaternion()
 			const scale = new Vector3()
 			const matrix = new Matrix4()
-
 			const radius = (id % 3 + 1) + 0.5
-			position.x = radius * Math.cos(this.angleArray[id].phi)
-			position.y = radius * Math.sin(this.angleArray[id].phi)
+			// position.x = radius * Math.cos(this.angleArray[id].phi)
+			// position.y = radius * Math.sin(this.angleArray[id].phi)
+			const angle = Math.atan(this.angleArray[id].y / this.angleArray[id].x)
+			position.x = Math.sign(this.angleArray[id].x) * radius * Math.cos(angle)
+			position.y = Math.sign(this.angleArray[id].x) * radius * Math.sin(angle)
 			position.z = this.posArray[id].z
 
 			quaternion.w = 0

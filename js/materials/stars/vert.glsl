@@ -84,7 +84,8 @@ void main()	{
     #include <normalsVert>
 	vec3 transformed = mix(vec3(position), vec3(spherePosition), animationProgress);
 	mat4 finalInstanceMatrix = instanceMatrix;
-	finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3], sin( mod(uTime, PI * 2.) ) * 0.5 + 0.5 );
+	// finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3], sin( mod(uTime, PI * 2.) ) * 0.5 + 0.5 );
+	finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3],  sin( mod(uTime, PI * 2.) ) * 0.5 + 0.5);
 	vec3 matrixPos = vec3(finalInstanceMatrix[3][0], finalInstanceMatrix[3][1], finalInstanceMatrix[3][2]);
 	vUv = uv;
 	vec2 puv = matrixPos.xy / (15.);
@@ -116,7 +117,7 @@ void main()	{
 	
 
 	
-	mat4 translated = finalInstanceMatrix * translationMatrix(vec3(vx * intensity, vy * intensity, 0.) * 10. + uAcceleration + noiseVal) * rotationMatrix(vec3(1., 1., 1.) + t, (t.r + t.g + t.b) * 10.);
+	mat4 translated = finalInstanceMatrix * translationMatrix(vec3(vx * randomVal * 10. * intensity, vy * randomVal * 10. * intensity, 0.) * 10. + uAcceleration * randomVal + noiseVal) * rotationMatrix(vec3(1., 1., 1.) + t, (t.r + t.g + t.b) * 10.);
 
    gl_Position = projectionMatrix * modelViewMatrix * translated  * vec4( transformed, 1.0 );
 }

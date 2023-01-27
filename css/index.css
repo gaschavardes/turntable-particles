@@ -29,6 +29,8 @@ canvas {
 }
 #WaterTexture{
 	position: absolute;
+	width: 100px;
+	height: 100px;
 }
 #touchTexture{
 	border: solid 1px red;
