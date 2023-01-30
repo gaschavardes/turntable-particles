@@ -18,6 +18,7 @@ uniform float uTime;
 uniform sampler2D displaceText;
 uniform highp sampler2D uJointTexture;
 uniform vec3 uAcceleration; 
+uniform float uRotationProgress;
 
 uniform mat4 bindMatrix;
 uniform mat4 uRotateState;
@@ -85,7 +86,7 @@ void main()	{
 	
 	mat4 finalInstanceMatrix = instanceMatrix;
 	// finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3], sin( mod(uTime, PI * 2.) ) * 0.5 + 0.5 );
-	finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3],  sin( mod(uTime, PI * 2.) ) * 0.5 + 0.5);
+	finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3],  min(abs(uRotationProgress) * 5., 1.));
 	vec3 matrixPos = vec3(finalInstanceMatrix[3][0], finalInstanceMatrix[3][1], finalInstanceMatrix[3][2]);
 	vUv = uv;
 	vec2 puv = matrixPos.xy / (15.);
@@ -110,7 +111,7 @@ void main()	{
 	// transformed = ( bindMatrixInverse * skinned ).xyz;
 
  	float vx = (t.r *2. - 1.);
-	float vy = -(t.g *2. - 1.);
+	float vy = -step( .01, abs(t.g *2. - 1.)) * (t.g *2. - 1.);
 	float intensity = t.b;
 	// mat4 translated = instanceMatrix * translationMatrix(t) * rotationMatrix(t, (t.r + t.g + t.b) * 10.);
 	vec3 noiseVal = vec3(noise(cos(uTime) * matrixPos.x), noise(cos(uTime) * matrixPos.y), noise(uTime * matrixPos.z));

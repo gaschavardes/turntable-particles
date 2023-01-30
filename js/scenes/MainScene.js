@@ -31,6 +31,8 @@ export default class MainScene extends Scene {
 		this.posArray = []
 		this.dampedProgress = 0
 		this.dampedProgressCamera = 0
+		this.rotationProgress = 0
+		this.dampedRotationProgress = 0
 		this.originalMatrix = []
 		this.randomVal = []
 		this.animationsProgress = []
@@ -115,7 +117,8 @@ export default class MainScene extends Scene {
 			u_jointTexture: this.boneTexture,
 			uRotateState: new Matrix4(),
 			uAcceleration: new Vector3(),
-			uTime: 0
+			uTime: 0,
+			rotationProgress: 0
 		})
 		const offset = []
 		const rotateState = []
@@ -194,15 +197,18 @@ export default class MainScene extends Scene {
 
 	onRaf = (time) => {
 		this.waterTexture.update()
-		this.controls.update()
+		// this.controls.update()
 		// this.touchTexture.update()
 		// const positions = this.points.geometry.attributes.position.array
 		// store.progress += 0.001
 		this.dampedProgress += (store.progress - this.dampedProgress) * 0.1
+		this.dampedRotationProgress += (store.progress - this.dampedProgress) * 0.01
 		this.dampedProgressCamera += (store.progress - this.dampedProgress) * 0.15
 		this.radius = 60 + this.dampedProgress * 1
 		// store.progress += 0.02
 		// console.log(this.dampedProgressCamera)
+
+		this.rotationProgress = store.progress - this.dampedProgress
 
 		if (store.acceleration) {
 			let tmp = new Vector3()
@@ -215,29 +221,7 @@ export default class MainScene extends Scene {
 			this.targetAcceleration.add(tmp)
 
 			this.instanceMesh.material.uniforms.uAcceleration.value = this.targetAcceleration
-		}
-
-		if (!store.motion) {
-			// for (let i = 0; i < this.count; i++) {
-			// 	this.originalMatrix[i].decompose(this.dummy.position, this.dummy.rotation, this.dummy.scale)
-			// 	this.dummy.position.x += Math.sin(time) * this.randomVal[i]
-			// 	this.dummy.position.y += Math.sin(time) * this.randomVal[i]
-			// 	this.dummy.position.z += Math.sin(time) * this.randomVal[i]
-			// 	this.dummy.updateMatrix()
-			// 	this.instanceMesh.setMatrixAt(i, this.dummy.matrix)
-			// 	// this.instanceMesh.getMatrixAt(i, matrix)
-			// }
-		} else {
-			// for (let i = 0; i < this.count; i++) {
-			// 	this.originalMatrix[i].decompose(this.dummy.position, this.dummy.rotation, this.dummy.scale)
-			// 	this.dummy.position.x += store.acceleration.x * 0.1 * this.randomVal[i]
-			// 	this.dummy.position.y += store.acceleration.y * 0.1 * this.randomVal[i]
-			// 	this.dummy.position.z += store.acceleration.z * 0.1 * this.randomVal[i]
-			// 	console.log(store.acceleration.x)
-			// 	this.dummy.updateMatrix()
-			// 	this.instanceMesh.setMatrixAt(i, this.dummy.matrix)
-			// 	this.instanceMesh.getMatrixAt(i, matrix)
-			// }
+			this.instanceMesh.material.uniforms.uRotationProgress.value = this.rotationProgress
 		}
 
 		this.instanceMesh.instanceMatrix.needsUpdate = true

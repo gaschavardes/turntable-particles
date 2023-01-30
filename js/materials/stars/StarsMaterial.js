@@ -24,7 +24,8 @@ export default class StarsMaterial extends RawShaderMaterial {
 				bindMatrixInverse: { value: options.bindMatrixInverse },
 				uJointTexture: { value: options.u_jointTexture },
 				uAcceleration: { value: options.uAcceleration },
-				uRotateState: { value: options.uRotateState }
+				uRotateState: { value: options.uRotateState },
+				uRotationProgress: { value: 0 }
 			}
 		})
 	}
