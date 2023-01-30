@@ -88,8 +88,8 @@ export default class WaterTexture {
 		this.points.forEach((point, i) => {
 			const slowAsOlder = 1 - point.age / this.maxAge
 			const force = point.force * agePart * slowAsOlder * 0.5
-			point.x += point.vx * force
-			point.y += point.vy * force
+			// point.x += point.vx * force
+			// point.y += point.vy * force
 			point.age += 1
 			if (point.age > this.maxAge) {
 				this.points.splice(i, 1)

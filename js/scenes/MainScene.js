@@ -18,7 +18,7 @@ export default class MainScene extends Scene {
 		super()
 		this.gltfLoader = new GLTFLoader()
 		this.load()
-		this.count = 5000
+		this.count = 2000
 		this.size = 0.05
 		this.spread = 15
 		this.radius = 10
@@ -158,7 +158,7 @@ export default class MainScene extends Scene {
 		const rotation = new Euler()
 		const quaternion = new Quaternion()
 		const scale = new Vector3()
-		const radius = Math.random() * 3
+		const radius = 2 + Math.random() * 1
 		// const angle = Math.random() * Math.PI * 2 - Math.PI
 
 		const theta = MathUtils.randFloatSpread(360)
@@ -262,8 +262,9 @@ export default class MainScene extends Scene {
 		if (boneTexture !== null) {
 			boneTexture.needsUpdate = true
 		}
-
-		// store.camera.rotation.set(0, 0, this.dampedProgressCamera * 1.5)
+		if (store.acceleration) {
+			store.camera.rotation.set(0, 0, this.dampedProgressCamera * 1.5)
+		}
 	}
 
 	onResize = () => {
