@@ -105,12 +105,12 @@ void main()	{
 	float vy = -step( .01, abs(t.g *2. - 1.)) * (t.g *2. - 1.);
 	float intensity = t.b;
 	// mat4 translated = instanceMatrix * translationMatrix(t) * rotationMatrix(t, (t.r + t.g + t.b) * 10.);
-	vec3 noiseVal = vec3(noise(cos(uTime) * matrixPos.x), noise(cos(uTime) * matrixPos.y), noise(uTime * matrixPos.z));
-	noiseVal = vec3(0., 0., 0.);
+	vec3 noiseVal = vec3(noise((uTime + randomVal) * 0.5 * matrixPos.x), noise((uTime + randomVal) * 0.5 * matrixPos.y), noise((uTime + randomVal) * 0.5 * matrixPos.z));
+	// noiseVal = vec3(0., 0., 0.);
 
 	float translationVal = (max(intensity - abs(uRotationProgress), 0.)) * 10.;
 	// mat4 translated = finalInstanceMatrix * translationMatrix(vec3(vx * randomVal * 5. * translationVal, vy * randomVal * 5. * translationVal, 0.) * 10. + uAcceleration * randomVal + noiseVal);
-	mat4 translated = finalInstanceMatrix * translationMatrix(vec3(vx * randomVal * 5. * translationVal, vy * randomVal * 5. * translationVal, 0.));
+	mat4 translated = finalInstanceMatrix * translationMatrix(vec3(vx * randomVal * 5. * translationVal, vy * randomVal * 5. * translationVal, 0.) + noiseVal);
 	translated *=  rotationMatrix(vec3(1., 1., 1.) + t, (t.r + t.g + t.b) * 1.);
 
 	vec3 transformed = mix(vec3(position), vec3(spherePosition), min((intensity + abs(uRotationProgress)) * 10., 1.));

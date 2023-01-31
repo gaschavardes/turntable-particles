@@ -140,7 +140,7 @@ export default class MainScene extends Scene {
 			offset.push(z)
 
 			this.originalMatrix.push(matrix.clone())
-			this.randomVal.push(Math.random() * 1 + 0.1)
+			this.randomVal.push(Math.random() * 1 + 0.8)
 			this.animationsProgress.push(0)
 			rotateState.push(...rotateMatrix)
 			this.instanceMesh.setMatrixAt(i, matrix)
@@ -176,11 +176,11 @@ export default class MainScene extends Scene {
 		const radius = 2.5 + Math.random() * 0.5
 		// const angle = Math.random() * Math.PI * 2 - Math.PI
 
-		const theta = MathUtils.randFloatSpread(360)
+		// const theta = MathUtils.randFloatSpread(360)
 		const phi = MathUtils.randFloatSpread(360)
 
-		// const theta = Math.random() * 10000
-		// const phi = Math.random() * 10000
+		const theta = (i / this.count) * 360
+		// const phi = ((this.count - i) / this.count) * 360
 
 		// this.angleArray.push({ 'x': phi, 'y': theta })
 		position.x = radius * Math.sin(theta) * Math.cos(phi)
