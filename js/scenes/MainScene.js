@@ -1,4 +1,4 @@
-import { Color, MathUtils, Vector3, Euler, Quaternion, AnimationMixer, AnimationClip, MeshNormalMaterial, Texture, Scene, TorusKnotBufferGeometry, BufferGeometry, InstancedBufferAttribute, UnsignedByteType, Matrix4, InstancedMesh, Object3D, Vector2, RGBAFormat, FloatType, DataTexture, NearestFilter } from 'three'
+import { Color, MathUtils, Vector3, Euler, Quaternion, AnimationMixer, AnimationClip, MeshNormalMaterial, Texture, Scene, TorusKnotGeometry, BufferGeometry, InstancedBufferAttribute, UnsignedByteType, Matrix4, InstancedMesh, Object3D, Vector2, RGBAFormat, FloatType, DataTexture, NearestFilter, Mesh } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
@@ -18,14 +18,14 @@ export default class MainScene extends Scene {
 		super()
 		this.gltfLoader = new GLTFLoader()
 		this.load()
-		this.count = 2000
+		this.count = 1500
 		this.size = 0.05
 		this.spread = 15
-		this.radius = 10
+		this.radius = 1
 		this.spin = 1
-		this.branches = 20
-		this.randomVal = 10
-		this.hole = 0
+		this.branches = 2
+		this.randomValue = 1
+		this.hole = 2
 		this.randomArray = []
 		this.angleArray = []
 		this.posArray = []
@@ -66,6 +66,7 @@ export default class MainScene extends Scene {
 		this.createRotatedMatrix()
 		this.setTimeline()
 		this.setBlinkingAnim(39)
+		this.setSurprise()
 	}
 
 	setTimeline() {
@@ -122,6 +123,7 @@ export default class MainScene extends Scene {
 		})
 		const offset = []
 		const rotateState = []
+		this.radiusVal = []
 		this.instanceMesh = new InstancedMesh(this.suzanne.geometry, this.material, this.count)
 		console.log(this.instanceMesh, new Matrix4())
 		for (let i = 0; i < this.count; i++) {
@@ -142,12 +144,15 @@ export default class MainScene extends Scene {
 			this.animationsProgress.push(0)
 			rotateState.push(...rotateMatrix)
 			this.instanceMesh.setMatrixAt(i, matrix)
+			this.radiusVal.push(0)
 		}
 		const randomArray = new Float32Array(this.randomVal)
 		const animationProgress = new Float32Array(this.animationsProgress)
 		const rotatePosMatrix = new Float32Array(rotateState)
+		const radiusVal = new Float32Array(this.radiusVal)
 		this.instanceMesh.geometry.setAttribute('randomVal', new InstancedBufferAttribute(randomArray, 1))
 		this.instanceMesh.geometry.setAttribute('animationProgress', new InstancedBufferAttribute(animationProgress, 1))
+		this.instanceMesh.geometry.setAttribute('radiusVal', new InstancedBufferAttribute(radiusVal, 1))
 		console.log(rotateState)
 		this.instanceMesh.geometry.setAttribute('rotatePos', new InstancedBufferAttribute(rotatePosMatrix, 16))
 		this.instanceMesh.geometry.attributes.animationProgress.needsUpdate = true
@@ -156,16 +161,27 @@ export default class MainScene extends Scene {
 		// this.updateAnim(0)
 	}
 
+	setSurprise() {
+		const geometry = new TorusKnotGeometry(1, 0.3, 100, 16)
+		const material = new MeshNormalMaterial()
+		this.present = new Mesh(geometry, material)
+		this.add(this.present)
+	}
+
 	randomizeMatrix(i, matrix, x, y, z) {
 		const position = new Vector3()
 		const rotation = new Euler()
 		const quaternion = new Quaternion()
 		const scale = new Vector3()
-		const radius = 2 + Math.random() * 1
+		const radius = 2.5 + Math.random() * 0.5
 		// const angle = Math.random() * Math.PI * 2 - Math.PI
 
 		const theta = MathUtils.randFloatSpread(360)
 		const phi = MathUtils.randFloatSpread(360)
+
+		// const theta = Math.random() * 10000
+		// const phi = Math.random() * 10000
+
 		// this.angleArray.push({ 'x': phi, 'y': theta })
 		position.x = radius * Math.sin(theta) * Math.cos(phi)
 		position.y = radius * Math.sin(theta) * Math.sin(phi)
@@ -197,24 +213,27 @@ export default class MainScene extends Scene {
 
 	onRaf = (time) => {
 		this.waterTexture.update()
-		// this.controls.update()
+		this.controls.update()
+		this.time = time
 		// this.touchTexture.update()
 		// const positions = this.points.geometry.attributes.position.array
 		// store.progress += 0.001
 		this.dampedProgress += (store.progress - this.dampedProgress) * 0.1
-		this.dampedRotationProgress += (store.progress - this.dampedProgress) * 0.01
+		this.dampedRotationProgress += (store.progress - this.dampedRotationProgress) * 0.05
 		this.dampedProgressCamera += (store.progress - this.dampedProgress) * 0.15
 		this.radius = 60 + this.dampedProgress * 1
+
+		this.present.rotation.y = this.dampedProgressCamera
 		// store.progress += 0.02
 		// console.log(this.dampedProgressCamera)
 
-		this.rotationProgress = store.progress - this.dampedProgress
-
+		this.rotationProgress = Math.abs(store.progress) - Math.abs(this.dampedRotationProgress)
+		console.log(store.progress, this.dampedRotationProgress)
 		if (store.acceleration) {
 			let tmp = new Vector3()
 
 			const actualAcc = new Vector3(store.acceleration.x, store.acceleration.y, store.acceleration.z)
-			console.log(Math.round(store.acceleration.x))
+			// console.log(Math.round(store.acceleration.x))
 			actualAcc.multiplyScalar(5)
 			tmp = actualAcc.sub(this.targetAcceleration)
 			tmp.multiplyScalar(0.1)
@@ -249,6 +268,7 @@ export default class MainScene extends Scene {
 		if (store.acceleration) {
 			store.camera.rotation.set(0, 0, this.dampedProgressCamera * 1.5)
 		}
+		this.createRotatedMatrix1()
 	}
 
 	onResize = () => {
@@ -395,13 +415,31 @@ export default class MainScene extends Scene {
 			const quaternion = new Quaternion()
 			const scale = new Vector3()
 			const matrix = new Matrix4()
-			const radius = (id % 3 + 1) + 0.5
-			// position.x = radius * Math.cos(this.angleArray[id].phi)
-			// position.y = radius * Math.sin(this.angleArray[id].phi)
-			const angle = Math.atan(this.angleArray[id].y / this.angleArray[id].x)
-			position.x = Math.sign(this.angleArray[id].x) * radius * Math.cos(angle)
-			position.y = Math.sign(this.angleArray[id].x) * radius * Math.sin(angle)
-			position.z = this.posArray[id].z
+			// const radius = (id % 3 + 1) + 0.5
+			// // position.x = radius * Math.cos(this.angleArray[id].phi)
+			// // position.y = radius * Math.sin(this.angleArray[id].phi)
+			// const angle = Math.atan(this.angleArray[id].y / this.angleArray[id].x)
+			// position.x = Math.sign(this.angleArray[id].x) * radius * Math.cos(angle) + Math.random() * 0.2 - 0.1
+			// position.y = Math.sign(this.angleArray[id].x) * radius * Math.sin(angle) + Math.random() * 0.2 - 0.1
+			// // position.z = this.posArray[id].z
+			// position.z = angle * 5
+
+			this.branches = 10
+			this.randomArray.push(
+				{
+					random1: Math.random(),
+					randomX: Math.random(),
+					randomY: Math.random()
+				}
+			)
+			const radius = Math.random() * this.radius
+			const randomise = (Math.random() - 0.5) * this.randomValue
+			const spin = radius * this.spin
+			const branchAngle = (id % this.branches) / this.branches * Math.PI * 2
+
+			position.x = Math.cos(branchAngle + spin) * (radius + this.hole) + (randomise * radius)
+			position.y = Math.sin(branchAngle + spin) * (radius + this.hole) + (randomise * radius)
+			position.z = (Math.log(radius + this.hole) - this.radius) * 10 + 3
 
 			quaternion.w = 0
 			quaternion.x = 0
@@ -419,6 +457,48 @@ export default class MainScene extends Scene {
 		this.instanceMesh.geometry.attributes.rotatePos.set(rotatePosMatrix)
 		this.instanceMesh.geometry.attributes.rotatePos.needsUpdate = true
 		console.log(this.instanceMesh.geometry.attributes.rotatePos)
+	}
+
+	createRotatedMatrix1() {
+		this.tempMatrix = []
+		this.radiusVal = []
+		for (let id = 0; id < this.count; id++) {
+			const position = new Vector3()
+			const quaternion = new Quaternion()
+			const scale = new Vector3()
+			const matrix = new Matrix4()
+
+			this.branches = 5
+			this.radius = 60 + this.time * 1
+			const radius = ((this.randomArray[id].random1 + 0.1) * this.radius) % 5
+			this.radiusVal.push(radius)
+			let randomiseX = (this.randomArray[id].randomX - 0.5) * this.randomValue
+			let randomiseY = (this.randomArray[id].randomY - 0.5) * this.randomValue
+			randomiseX = (this.randomArray[id].randomX) * (id % 2 - 0.5) * this.randomValue
+			randomiseY = (this.randomArray[id].randomY) * (id % 2 - 0.5) * this.randomValue
+			const spin = radius * this.spin
+			const branchAngle = (id % this.branches) / this.branches * Math.PI * 2
+
+			position.x = Math.cos(branchAngle + spin) * (radius + this.hole) + (randomiseX * (radius + 0.3))
+			position.y = Math.sin(branchAngle + spin) * (radius + this.hole) + (randomiseY * (radius + 0.3))
+			position.z = ((Math.log(radius + this.hole)) * 10) * this.clamp(this.time, 0, 1) - 5
+			quaternion.w = 0
+			quaternion.x = 0
+			quaternion.y = 0
+			quaternion.z = 0
+
+			scale.x = 1
+			scale.y = 1
+			scale.z = 1
+			matrix.compose(position, quaternion, scale)
+			this.tempMatrix.push(...matrix.elements)
+		}
+		const rotatePosMatrix = new Float32Array(this.tempMatrix)
+		this.instanceMesh.geometry.attributes.rotatePos.set(rotatePosMatrix)
+		this.instanceMesh.geometry.attributes.rotatePos.needsUpdate = true
+
+		this.instanceMesh.geometry.attributes.radiusVal.set(this.radiusVal)
+		this.instanceMesh.geometry.attributes.radiusVal.needsUpdate = true
 	}
 
 	setBlinkingAnim(id) {

@@ -17,7 +17,7 @@ export default class WebGL {
 
 	setup() {
 		this.camera = new PerspectiveCamera(45, store.window.w / store.window.h, 0.1, 10000)
-		this.camera.position.z = 10
+		this.camera.position.z = 15
 		store.camera = this.camera
 
 		// this.starRenderer = new WebGLRenderer({ alpha: true, antialias: true, canvas: this.dom.canvas, powerPreference: 'high-performance', stencil: false })

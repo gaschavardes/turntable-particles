@@ -9,6 +9,7 @@ in mat4 instanceMatrix;
 // in vec4 skinIndex;
 // in vec4 skinWeight;
 in float randomVal;
+in float radiusVal;
 in float animationProgress;
 in vec4 spherePosition;
 in mat4 rotatePos;
@@ -27,6 +28,7 @@ uniform mat4 bindMatrixInverse;
 uniform int boneTextureSize;
 
 out vec2 vPUv;
+out float vRadius;
 
 // mat4 getBoneMatrix(uint jointNdx) {
 //   return mat4(
@@ -86,29 +88,18 @@ void main()	{
 	
 	mat4 finalInstanceMatrix = instanceMatrix;
 	// finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3], sin( mod(uTime, PI * 2.) ) * 0.5 + 0.5 );
-	finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3],  min(abs(uRotationProgress) * 5., 1.));
+
+	finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3],  min(abs(uRotationProgress) * 2., 1.));
+	// finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3],  min(sin(uTime) + 1., 1.) );
 	vec3 matrixPos = vec3(finalInstanceMatrix[3][0], finalInstanceMatrix[3][1], finalInstanceMatrix[3][2]);
 	vUv = uv;
 	vec2 puv = matrixPos.xy / (15.);
 	vPUv = puv;
+	vRadius = radiusVal;
 
 	// float t = texture2D(displaceText, puv + vec2(0.5, 0.5)).r;
 	vec3 t = texture(displaceText, puv + vec2(0.5, 0.5)).rgb;
 
-	// mat4 boneMatX = getBoneMatrix( skinIndex.x );
-	// mat4 boneMatY = getBoneMatrix( skinIndex.y );
-	// mat4 boneMatZ = getBoneMatrix( skinIndex.z );
-	// mat4 boneMatW = getBoneMatrix( skinIndex.w );
-
-	// vec4 skinVertex = bindMatrix * vec4( transformed, 1.0 );
-
-	// vec4 skinned = vec4( 0.0 );
-	// skinned += boneMatX * skinVertex * skinWeight.x;
-	// skinned += boneMatY * skinVertex * skinWeight.y;
-	// skinned += boneMatZ * skinVertex * skinWeight.z;
-	// skinned += boneMatW * skinVertex * skinWeight.w;
-
-	// transformed = ( bindMatrixInverse * skinned ).xyz;
 
  	float vx = (t.r *2. - 1.);
 	float vy = -step( .01, abs(t.g *2. - 1.)) * (t.g *2. - 1.);
@@ -117,11 +108,12 @@ void main()	{
 	vec3 noiseVal = vec3(noise(cos(uTime) * matrixPos.x), noise(cos(uTime) * matrixPos.y), noise(uTime * matrixPos.z));
 	noiseVal = vec3(0., 0., 0.);
 
-	
-	mat4 translated = finalInstanceMatrix * translationMatrix(vec3(vx * randomVal * 5. * intensity, vy * randomVal * 5. * intensity, 0.) * 10. + uAcceleration * randomVal + noiseVal);
+	float translationVal = (max(intensity - abs(uRotationProgress), 0.)) * 10.;
+	// mat4 translated = finalInstanceMatrix * translationMatrix(vec3(vx * randomVal * 5. * translationVal, vy * randomVal * 5. * translationVal, 0.) * 10. + uAcceleration * randomVal + noiseVal);
+	mat4 translated = finalInstanceMatrix * translationMatrix(vec3(vx * randomVal * 5. * translationVal, vy * randomVal * 5. * translationVal, 0.));
 	translated *=  rotationMatrix(vec3(1., 1., 1.) + t, (t.r + t.g + t.b) * 1.);
 
-	vec3 transformed = mix(vec3(position), vec3(spherePosition), intensity * 2.);
+	vec3 transformed = mix(vec3(position), vec3(spherePosition), min((intensity + abs(uRotationProgress)) * 10., 1.));
 
    gl_Position = projectionMatrix * modelViewMatrix * translated  * vec4( transformed, 1.0 );
 }
