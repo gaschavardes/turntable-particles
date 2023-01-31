@@ -56,8 +56,8 @@ export default class MainScene extends Scene {
 			// // afterimagePass.renderToScreen = false
 			// store.WebGL.composerPasses.add(afterimagePass, 3)
 		})
-		this.controls = new OrbitControls(store.camera, store.WebGL.renderer.domElement)
-		this.controls.enableDamping = true
+		// this.controls = new OrbitControls(store.camera, store.WebGL.renderer.domElement)
+		// this.controls.enableDamping = true
 	}
 
 	build() {
@@ -213,7 +213,7 @@ export default class MainScene extends Scene {
 
 	onRaf = (time) => {
 		this.waterTexture.update()
-		this.controls.update()
+		// this.controls.update()
 		this.time = time
 		// this.touchTexture.update()
 		// const positions = this.points.geometry.attributes.position.array
