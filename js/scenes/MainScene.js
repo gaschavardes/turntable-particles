@@ -227,7 +227,7 @@ export default class MainScene extends Scene {
 		// store.progress += 0.02
 		// console.log(this.dampedProgressCamera)
 
-		this.rotationProgress = Math.abs(store.progress) - Math.abs(this.dampedRotationProgress)
+		this.rotationProgress = store.progress - this.dampedRotationProgress
 		console.log(store.progress, this.dampedRotationProgress)
 		if (store.acceleration) {
 			let tmp = new Vector3()
