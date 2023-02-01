@@ -90,7 +90,7 @@ void main()	{
 	mat4 finalInstanceMatrix = instanceMatrix;
 	// finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3], sin( mod(uTime, PI * 2.) ) * 0.5 + 0.5 );
 
-	finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3],  min(abs(uRotationProgress) * 2., 1.));
+	finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3],  min(abs(uRotationProgress) * 1.5, 1.));
 	// finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3],  1. );
 	vec3 matrixPos = vec3(finalInstanceMatrix[3][0], finalInstanceMatrix[3][1], finalInstanceMatrix[3][2]);
 	vUv = uv;

@@ -95,7 +95,7 @@ export default class MainScene extends Scene {
 		this.fxaaPass.material.uniforms.resolution.value.x = 1 / (store.window.w * store.WebGL.renderer.getPixelRatio())
 		this.fxaaPass.material.uniforms.resolution.value.y = 1 / (store.window.fullHeight * store.WebGL.renderer.getPixelRatio())
 
-		this.bloomPass = new UnrealBloomPass(new Vector2(store.window.w, store.window.fullHeight), 2.120, 1, 0.6)
+		this.bloomPass = new UnrealBloomPass(new Vector2(store.window.w, store.window.fullHeight), 2.120, 2, 0.7)
 		this.bloomPass.enabled = true
 
 		this.screenFxPass = new ShaderPass(new ShaderMaterial({
@@ -224,9 +224,9 @@ export default class MainScene extends Scene {
 					randomY: Math.random()
 				}
 			)
-			positions[i3] = Math.random() * 20 - 10
-			positions[i3 + 1] = Math.random() * 20 - 10
-			positions[i3 + 2] = Math.random() * 20 - 10
+			positions[i3] = Math.random() * 100 - 50
+			positions[i3 + 1] = Math.random() * 100 - 50
+			positions[i3 + 2] = Math.random() * 100 - 50
 
 			rotateState.push(...rotateMatrix)
 		}
@@ -303,6 +303,7 @@ export default class MainScene extends Scene {
 		// console.log(this.dampedProgressCamera)
 
 		this.rotationProgress = store.progress - this.dampedRotationProgress
+		console.log('ROTATION', this.rotationProgress)
 		if (store.acceleration) {
 			let tmp = new Vector3()
 
@@ -495,8 +496,8 @@ export default class MainScene extends Scene {
 			const spin = radius * this.spin
 			const branchAngle = (id % this.branches) / this.branches * Math.PI * 2
 
-			position.x = Math.cos(branchAngle + spin) * (radius + this.hole) + (randomiseX * (radius + 0.3))
-			position.y = Math.sin(branchAngle + spin) * (radius + this.hole) + (randomiseY * (radius + 0.3))
+			position.x = Math.cos(branchAngle + spin * Math.sign(this.rotationProgress)) * (radius + this.hole) + (randomiseX * (radius + 0.3))
+			position.y = Math.sin(branchAngle + spin * Math.sign(this.rotationProgress)) * (radius + this.hole) + (randomiseY * (radius + 0.3))
 			position.z = ((Math.log(radius + this.hole)) * 10) * this.clamp(this.time, 0, 1) - 5
 			quaternion.w = 0
 			quaternion.x = 0
