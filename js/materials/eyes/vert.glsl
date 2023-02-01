@@ -90,7 +90,7 @@ void main()	{
 	// finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3], sin( mod(uTime, PI * 2.) ) * 0.5 + 0.5 );
 
 	finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3],  min(abs(uRotationProgress) * 2., 1.));
-	// finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3],  min(sin(uTime) + 1., 1.) );
+	// finalInstanceMatrix[3] = mix(finalInstanceMatrix[3], rotatePos[3],  1. );
 	vec3 matrixPos = vec3(finalInstanceMatrix[3][0], finalInstanceMatrix[3][1], finalInstanceMatrix[3][2]);
 	vUv = uv;
 	vec2 puv = matrixPos.xy / (15.);
@@ -110,7 +110,7 @@ void main()	{
 
 	float translationVal = (max(intensity - abs(uRotationProgress), 0.)) * 10.;
 	// mat4 translated = finalInstanceMatrix * translationMatrix(vec3(vx * randomVal * 5. * translationVal, vy * randomVal * 5. * translationVal, 0.) * 10. + uAcceleration * randomVal + noiseVal);
-	mat4 translated = finalInstanceMatrix * translationMatrix(vec3(vx * randomVal * 5. * translationVal, vy * randomVal * 5. * translationVal, 0.) + noiseVal);
+	mat4 translated = finalInstanceMatrix * translationMatrix(vec3(vx * randomVal * 5. * translationVal, vy * randomVal * 5. * translationVal, 0.) + noiseVal * max((1. - uRotationProgress), 0.));
 	translated *=  rotationMatrix(vec3(1., 1., 1.) + t, (t.r + t.g + t.b) * 1.);
 
 	vec3 transformed = mix(vec3(position), vec3(spherePosition), min((intensity + abs(uRotationProgress)) * 10., 1.));

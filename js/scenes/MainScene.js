@@ -224,7 +224,10 @@ export default class MainScene extends Scene {
 		geometry.setAttribute('color', new BufferAttribute(this.colors, 3))
 		geometry.setAttribute('rotatePos', new BufferAttribute(rotatePosMatrix, 16))
 
-		this.points = new Points(geometry, new StarsMaterial())
+		this.points = new Points(geometry, new StarsMaterial({
+			uRotationProgress: 0
+		})
+		)
 		this.add(this.points)
 	}
 
@@ -300,6 +303,7 @@ export default class MainScene extends Scene {
 
 			this.instanceMesh.material.uniforms.uAcceleration.value = this.targetAcceleration
 			this.instanceMesh.material.uniforms.uRotationProgress.value = this.rotationProgress
+			this.points.material.uniforms.uRotationProgress.value = this.rotationProgress
 		}
 
 		this.instanceMesh.instanceMatrix.needsUpdate = true

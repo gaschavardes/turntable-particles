@@ -5,6 +5,7 @@ in vec3 vNormal;
 
 uniform float uSize;
 uniform float uTime;
+uniform float uRotationProgress;
 
 out vec3 vColor;
 
@@ -22,11 +23,11 @@ void main()	{
 	float wind = uTime * 0.5;
 	vec3 newPos = position;
 	newPos.y += wind;
-	newPos.y = mod(newPos.y, 13.) - 8.;
-	vec3 noiseVal = vec3(noise((uTime) * 0.1 * newPos.x ), 0., uTime * 20. * 0.);
+	newPos.y = mod(newPos.y, 20.) - 10.;
+	vec3 noiseVal = vec3(noise((uTime) * 0.1 * newPos.x ), 0., uTime * 20.);
 
-	newPos += vec3(sin(noiseVal.x), noiseVal.y, noiseVal.z);
-	newPos.z = mod(newPos.z, 10.) - 10. ;
+	newPos += vec3(sin(noiseVal.x), noiseVal.y, noiseVal.z * uRotationProgress);
+	newPos.z = mod(newPos.z, 10.) - 13. ;
 
     gl_PointSize = uSize * clamp(position.z * 0.5, 0.8, 2.) ;
     gl_Position = projectionMatrix * modelViewMatrix * vec4( newPos, 1.0 );
