@@ -6,6 +6,7 @@ in vec3 vColor;
 in vec2 vPUv;
 in vec2 vUv;
 in float vRadius;
+in float animated;
 uniform sampler2D uTexture;
 uniform sampler2D uJointTexture;
 uniform float uRotationProgress;
@@ -20,5 +21,5 @@ void main() {
 	vec4 t = texture(uTexture, vUv);
 	float alpha = smoothstep(0., .2, vRadius) -  smoothstep(4.9, 5., vRadius);
 	alpha = mix(1., alpha, uRotationProgress);
-    outColor = vec4(mix(vNormal, vec3(0., 0., 0.), isDark), alpha);
+    outColor = vec4(mix(vNormal, vec3(0., 0., 0.), isDark - animated), alpha);
     }

@@ -28,6 +28,7 @@ uniform mat4 bindMatrixInverse;
 uniform int boneTextureSize;
 
 out vec2 vPUv;
+out float animated;
 out float vRadius;
 
 // mat4 getBoneMatrix(uint jointNdx) {
@@ -104,6 +105,7 @@ void main()	{
  	float vx = (t.r *2. - 1.);
 	float vy = -step( .01, abs(t.g *2. - 1.)) * (t.g *2. - 1.);
 	float intensity = t.b;
+	animated = intensity;
 	// mat4 translated = instanceMatrix * translationMatrix(t) * rotationMatrix(t, (t.r + t.g + t.b) * 10.);
 	vec3 noiseVal = vec3(noise((uTime + randomVal) * 0.5 * matrixPos.x), noise((uTime + randomVal) * 0.5 * matrixPos.y), noise((uTime + randomVal) * 0.5 * matrixPos.z));
 	// noiseVal = vec3(0., 0., 0.);

@@ -83,7 +83,6 @@ export default class MainScene extends Scene {
 	}
 
 	disposeMaterial(obj) {
-		console.log('OBJ', obj)
 		if (obj.material) {
 			obj.material.dispose()
 		}
@@ -96,7 +95,7 @@ export default class MainScene extends Scene {
 		this.fxaaPass.material.uniforms.resolution.value.x = 1 / (store.window.w * store.WebGL.renderer.getPixelRatio())
 		this.fxaaPass.material.uniforms.resolution.value.y = 1 / (store.window.fullHeight * store.WebGL.renderer.getPixelRatio())
 
-		this.bloomPass = new UnrealBloomPass(new Vector2(store.window.w, store.window.fullHeight), 2.120, 1, 0.01)
+		this.bloomPass = new UnrealBloomPass(new Vector2(store.window.w, store.window.fullHeight), 2.120, 1, 0.6)
 		this.bloomPass.enabled = true
 
 		this.screenFxPass = new ShaderPass(new ShaderMaterial({
@@ -200,7 +199,6 @@ export default class MainScene extends Scene {
 		this.instanceMesh.geometry.setAttribute('spherePosition', this.suzanneSphere.geometry.attributes.position)
 		this.add(this.instanceMesh)
 		// this.updateAnim(0)
-		console.log(this.instanceMesh)
 	}
 
 	setSurprise() {
@@ -350,7 +348,6 @@ export default class MainScene extends Scene {
 	}
 
 	darkenNonBloomed = (obj) => {
-		console.log('obj', obj, obj.isMesh, this.bloomLayer.test(obj.layers))
 		if (obj.isMesh && this.bloomLayer.test(obj.layers) === true) {
 			this.materials[obj.uuid] = obj.material
 			obj.material.uniforms.isDark.value = 1 - this.rotationProgress
