@@ -96,7 +96,7 @@ export default class MainScene extends Scene {
 		this.composer.addPass(this.renderScene)
 		this.composer.addPass(this.fxaaPass)
 		this.composer.addPass(this.bloomPass)
-		// this.composer.addPass(this.screenFxPass)
+		this.composer.addPass(this.screenFxPass)
 	}
 
 	setTimeline() {

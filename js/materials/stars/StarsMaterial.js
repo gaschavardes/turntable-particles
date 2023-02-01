@@ -14,7 +14,8 @@ export default class StarsMaterial extends RawShaderMaterial {
 			opacity: 1,
 			uniforms: {
 				uTime: store.WebGL.globalUniforms.uTime,
-				uSize: { value: 10 }
+				uSize: { value: 10 },
+				uRotationProgress: { value: 0 }
 			}
 		})
 	}
