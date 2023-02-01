@@ -25,7 +25,8 @@ export default class EyesMaterial extends RawShaderMaterial {
 				uJointTexture: { value: options.u_jointTexture },
 				uAcceleration: { value: options.uAcceleration },
 				uRotateState: { value: options.uRotateState },
-				uRotationProgress: { value: 0 }
+				uRotationProgress: { value: 0 },
+				isDark: { value: false }
 			}
 		})
 	}

@@ -1,4 +1,4 @@
-import { Color, MathUtils, Vector3, Euler, BufferAttribute, ShaderMaterial, Quaternion, Points, AnimationMixer, AnimationClip, MeshNormalMaterial, Texture, Scene, TorusKnotGeometry, BufferGeometry, InstancedBufferAttribute, UnsignedByteType, Matrix4, InstancedMesh, Object3D, Vector2, RGBAFormat, FloatType, DataTexture, NearestFilter, Mesh } from 'three'
+import { Color, MathUtils, Vector3, Layers, Euler, MeshBasicMaterial, BufferAttribute, ShaderMaterial, Quaternion, Points, AnimationMixer, AnimationClip, MeshNormalMaterial, Texture, Scene, TorusKnotGeometry, BufferGeometry, InstancedBufferAttribute, UnsignedByteType, Matrix4, InstancedMesh, Object3D, Vector2, RGBAFormat, FloatType, DataTexture, NearestFilter, Mesh } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
@@ -16,8 +16,12 @@ import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import screenFxVert from '../../glsl/includes/screenFx/vert.glsl'
 import screenFxFrag from '../../glsl/includes/screenFx/frag.glsl'
+import finalFxVert from '../../glsl/includes/finalPass/vert.glsl'
+import finalFxFrag from '../../glsl/includes/finalPass/frag.glsl'
 const _offsetMatrix = /* @__PURE__ */ new Matrix4()
 const _identityMatrix = /* @__PURE__ */ new Matrix4()
+
+const ENTIRE_SCENE = 0; const BLOOM_SCENE = 12
 export default class MainScene extends Scene {
 	constructor() {
 		super()
@@ -42,12 +46,16 @@ export default class MainScene extends Scene {
 		this.originalMatrix = []
 		this.randomVal = []
 		this.animationsProgress = []
+		this.materials = {}
 		this.color1 = '#ff1400'
 		this.color2 = '#0044ff'
 		this.dummy = new Object3D()
 		this.targetAcceleration = new Vector3()
 		this.composer = new EffectComposer(store.WebGL.renderer)
 		this.composer.setSize(store.window.w, store.window.h)
+		this.darkMaterial = new MeshBasicMaterial({ color: 'black' })
+		this.bloomLayer = new Layers()
+		this.bloomLayer.set(BLOOM_SCENE)
 		E.on('App:start', () => {
 			this.build()
 			this.buildPasses()
@@ -64,6 +72,7 @@ export default class MainScene extends Scene {
 	}
 
 	build() {
+		this.traverse(this.disposeMaterial)
 		this.waterTexture = new WaterTexture({ debug: true })
 		this.buildInstance()
 		this.createRotatedMatrix()
@@ -73,6 +82,13 @@ export default class MainScene extends Scene {
 		this.setParticles()
 	}
 
+	disposeMaterial(obj) {
+		console.log('OBJ', obj)
+		if (obj.material) {
+			obj.material.dispose()
+		}
+	}
+
 	buildPasses() {
 		this.renderScene = new RenderPass(this, store.camera)
 
@@ -80,7 +96,7 @@ export default class MainScene extends Scene {
 		this.fxaaPass.material.uniforms.resolution.value.x = 1 / (store.window.w * store.WebGL.renderer.getPixelRatio())
 		this.fxaaPass.material.uniforms.resolution.value.y = 1 / (store.window.fullHeight * store.WebGL.renderer.getPixelRatio())
 
-		this.bloomPass = new UnrealBloomPass(new Vector2(store.window.w, store.window.fullHeight), 2.120, 1, 0.6)
+		this.bloomPass = new UnrealBloomPass(new Vector2(store.window.w, store.window.fullHeight), 2.120, 1, 0.01)
 		this.bloomPass.enabled = true
 
 		this.screenFxPass = new ShaderPass(new ShaderMaterial({
@@ -94,9 +110,28 @@ export default class MainScene extends Scene {
 		}))
 
 		this.composer.addPass(this.renderScene)
+		this.composer.renderToScreen = false
 		this.composer.addPass(this.fxaaPass)
 		this.composer.addPass(this.bloomPass)
 		this.composer.addPass(this.screenFxPass)
+
+		const finalPass = new ShaderPass(
+			new ShaderMaterial({
+				uniforms: {
+					baseTexture: { value: null },
+					bloomTexture: { value: this.composer.renderTarget2.texture }
+				},
+				vertexShader: finalFxVert,
+				fragmentShader: finalFxFrag,
+				defines: {}
+			}), 'baseTexture'
+		)
+		finalPass.needsSwap = true
+
+		this.finalComposer = new EffectComposer(store.WebGL.renderer)
+		this.finalComposer.setSize(store.window.w, store.window.h)
+		this.finalComposer.addPass(this.renderScene)
+		this.finalComposer.addPass(finalPass)
 	}
 
 	setTimeline() {
@@ -116,7 +151,7 @@ export default class MainScene extends Scene {
 		const rotateTexture = new DataTexture(rotateMatrix, this.size, this.size, RGBAFormat, FloatType)
 		rotateTexture.needsUpdate = true
 
-		this.material = new EyesMaterial({
+		this.eyesMaterial = new EyesMaterial({
 			displaceText: this.waterTexture.texture,
 			uTextureSize: new Vector2(this.spread, this.spread),
 			uTexture: this.assets.textures.whale,
@@ -124,12 +159,15 @@ export default class MainScene extends Scene {
 			uRotateState: new Matrix4(),
 			uAcceleration: new Vector3(),
 			uTime: 0,
-			rotationProgress: 0
+			rotationProgress: 0,
+			isDark: false
 		})
+		// this.eyesMaterial = new MeshNormalMaterial()
 		const offset = []
 		const rotateState = []
 		this.radiusVal = []
-		this.instanceMesh = new InstancedMesh(this.suzanne.geometry, this.material, this.count)
+		this.instanceMesh = new InstancedMesh(this.suzanne.geometry, this.eyesMaterial, this.count)
+		this.instanceMesh.layers.enable(BLOOM_SCENE)
 		for (let i = 0; i < this.count; i++) {
 			// PUT THEM IN GRID
 			const space = 2
@@ -162,6 +200,7 @@ export default class MainScene extends Scene {
 		this.instanceMesh.geometry.setAttribute('spherePosition', this.suzanneSphere.geometry.attributes.position)
 		this.add(this.instanceMesh)
 		// this.updateAnim(0)
+		console.log(this.instanceMesh)
 	}
 
 	setSurprise() {
@@ -282,7 +321,7 @@ export default class MainScene extends Scene {
 		}
 
 		this.instanceMesh.instanceMatrix.needsUpdate = true
-		this.instanceMesh.material.uniforms.uTime.value = time
+		// this.instanceMesh.material.uniforms.uTime.value = time
 		// store.camera.rotation.set(0, 0, 0)
 
 		if (store.acceleration) {
@@ -292,7 +331,37 @@ export default class MainScene extends Scene {
 		/// PARTICLES MOVEMENT
 
 		this.createRotatedMatrix1()
-		this.composer.render()
+		this.renderBloom(true)
+		this.finalComposer.render()
+
+		// this.composer.render()
+	}
+
+	renderBloom = (mask) => {
+		if (mask === true) {
+			this.traverse(this.darkenNonBloomed)
+			this.composer.render()
+			this.traverse(this.restoreMaterial)
+		} else {
+			store.camera.layers.set(BLOOM_SCENE)
+			this.composer.render()
+			store.camera.layers.set(ENTIRE_SCENE)
+		}
+	}
+
+	darkenNonBloomed = (obj) => {
+		console.log('obj', obj, obj.isMesh, this.bloomLayer.test(obj.layers))
+		if (obj.isMesh && this.bloomLayer.test(obj.layers) === true) {
+			this.materials[obj.uuid] = obj.material
+			obj.material.uniforms.isDark.value = 1 - this.rotationProgress
+		}
+	}
+
+	restoreMaterial = (obj) => {
+		if (this.materials[obj.uuid]) {
+			obj.material.uniforms.isDark.value = 0
+			delete this.materials[obj.uuid]
+		}
 	}
 
 	onResize = () => {

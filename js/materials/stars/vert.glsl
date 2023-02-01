@@ -24,7 +24,7 @@ void main()	{
 	vec3 newPos = position;
 	newPos.y += wind;
 	newPos.y = mod(newPos.y, 20.) - 10.;
-	vec3 noiseVal = vec3(noise((uTime) * 0.1 * newPos.x ), 0., uTime * 20.);
+	vec3 noiseVal = vec3(noise((uTime) * 0.1 * newPos.x ), 0., mod(uTime * 10., 10.));
 
 	newPos += vec3(sin(noiseVal.x), noiseVal.y, noiseVal.z * uRotationProgress);
 	newPos.z = mod(newPos.z, 10.) - 13. ;
