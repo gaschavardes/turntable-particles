@@ -106,27 +106,8 @@ export default class MainScene extends Scene {
 
 	buildInstance() {
 		const matrix = new Matrix4()
-		this.bones = []
-		this.boneInverses = []
-		Array.from(this.assets.models.whale.parser.associations).forEach(el => {
-			if (el[0].type === 'SkinnedMesh') {
-				this.mesh = el[0]
-			} else if (el[0].type === 'Bone') {
-				this.bones.push(el[0])
-			}
-		})
-
-		this.mixer = new AnimationMixer(this.assets.models.whale.scene)
-		this.clips = this.assets.models.whale.animations
-		const clip = AnimationClip.findByName(this.clips, 'swim')
-		this.mixer.clipAction(clip).play()
-		this.calculateInverses()
-		this.mesh.skin = this.assets.models.whale.parser.json.skins[0]
-		this.mesh.accessors = this.assets.models.whale.parser.json.accessors
-		this.mesh.json = this.assets.models.whale.parser.json
 
 		// SUZANNE TEST
-
 		this.suzanne = this.assets.models.suzanne.scene.children[0]
 		this.suzanneSphere = this.assets.models.suzanneSphere.scene.children[0]
 		// this.getPositionAttribute(this.suzanneSphere.geometry)
@@ -135,17 +116,11 @@ export default class MainScene extends Scene {
 		const rotateTexture = new DataTexture(rotateMatrix, this.size, this.size, RGBAFormat, FloatType)
 		rotateTexture.needsUpdate = true
 
-		this.computeBoneTexture()
-		const geometry = this.mesh.geometry
 		this.material = new EyesMaterial({
 			displaceText: this.waterTexture.texture,
 			uTextureSize: new Vector2(this.spread, this.spread),
 			uTexture: this.assets.textures.whale,
 			uMouse: new Vector2(0, 0),
-			bindMatrix: this.mesh.bindMatrix,
-			bindMatrixInverse: this.mesh.bindMatrixInverse,
-			boneTextureSize: this.boneTextureSize,
-			u_jointTexture: this.boneTexture,
 			uRotateState: new Matrix4(),
 			uAcceleration: new Vector3(),
 			uTime: 0,
@@ -335,29 +310,14 @@ export default class MainScene extends Scene {
 			// catcher: 'Ch43_nonPBR.fbx'
 		}
 		const glb = {
-			catcherGlb: 'catch.glb',
-			whale: 'whale1.gltf',
 			suzanne: 'suzanne.glb',
 			suzanneSphere: 'suzanneSphere.glb'
 		}
-		const anim = {
-			groin: 'groin_anim.fbx'
-		}
+
 		const texture = {
-			whale: 'whale.png'
+
 		}
 
-		for (const key in fbx) {
-			store.AssetLoader.loadFbx((`models/${fbx[key]}`)).then(fbx => {
-				this.assets.models[key] = fbx
-			})
-		}
-
-		for (const key in anim) {
-			store.AssetLoader.loadFbx((`models/${anim[key]}`)).then(fbx => {
-				this.assets.models[key] = fbx
-			})
-		}
 		for (const key in glb) {
 			store.AssetLoader.loadGltf((`models/${glb[key]}`)).then((gltf, animation) => {
 				this.assets.models[key] = gltf
@@ -398,62 +358,6 @@ export default class MainScene extends Scene {
 			view[i] = binaryString.charCodeAt(i)
 		}
 		return arrayBuffer
-	}
-
-	computeBoneTexture() {
-		this.boneMatrices = new Float32Array(this.bones.length * 16)
-		// layout (1 matrix = 4 pixels)
-		//      RGBA RGBA RGBA RGBA (=> column1, column2, column3, column4)
-		//  with  8x8  pixel texture max   16 bones * 4 pixels =  (8 * 8)
-		//       16x16 pixel texture max   64 bones * 4 pixels = (16 * 16)
-		//       32x32 pixel texture max  256 bones * 4 pixels = (32 * 32)
-		//       64x64 pixel texture max 1024 bones * 4 pixels = (64 * 64)
-
-		let size = Math.sqrt(this.bones.length * 4) // 4 pixels needed for 1 matrix
-		size = MathUtils.ceilPowerOfTwo(size)
-		size = Math.max(size, 4)
-		this.size = size
-		const boneMatrices = new Float32Array(size * size * 4) // 4 floats per RGBA pixel
-		boneMatrices.set(this.boneMatrices) // copy current values
-		const boneTexture = new DataTexture(boneMatrices, size, size, RGBAFormat, FloatType)
-		boneTexture.needsUpdate = true
-
-		this.boneMatrices = boneMatrices
-		this.boneTexture = boneTexture
-		this.boneTextureSize = size
-
-		return this
-	}
-
-	updateAnim(id) {
-		const animation = this.assets.models.whale.animations[1]
-		this.tempMatrix = []
-		this.bones.forEach((el, i) => {
-			const position = new Vector3()
-			const quaternion = new Quaternion()
-			const scale = new Vector3()
-			const matrix = new Matrix4()
-			position.x = animation.tracks[i * 3].values[id]
-			position.y = animation.tracks[i * 3].values[id + 1]
-			position.z = animation.tracks[i * 3].values[id + 2]
-			if (animation.tracks[(i + 1) * 3]) {
-				quaternion.w = animation.tracks[(i + 1) * 3].values[id]
-				quaternion.x = animation.tracks[(i + 1) * 3].values[id + 1]
-				quaternion.y = animation.tracks[(i + 1) * 3].values[id + 2]
-				quaternion.z = animation.tracks[(i + 1) * 3].values[id + 3]
-			}
-			if (animation.tracks[(i + 2) * 3]) {
-				scale.x = animation.tracks[(i + 2) * 3].values[id]
-				scale.y = animation.tracks[(i + 2) * 3].values[id + 1]
-				scale.z = animation.tracks[(i + 2) * 3].values[id + 2]
-			}
-			matrix.compose(position, quaternion, scale)
-			this.tempMatrix.push(...matrix.elements)
-		})
-		const boneMatrices = new Float32Array(this.size * this.size * 4)
-		boneMatrices.set(this.tempMatrix)
-		const boneTexture = new DataTexture(boneMatrices, this.size, this.size, RGBAFormat, FloatType)
-		boneTexture.needsUpdate = true
 	}
 
 	createRotatedMatrix() {

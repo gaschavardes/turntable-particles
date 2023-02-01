@@ -8,8 +8,6 @@ export default class StarsMaterial extends RawShaderMaterial {
 		super({
 			vertexShader,
 			fragmentShader,
-			depthWrite: true,
-			depthTest: true,
 			transparent: true,
 			opacity: 1,
 			uniforms: {
