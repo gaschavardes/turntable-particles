@@ -1,9 +1,9 @@
-import { Color, MathUtils, Vector3, Euler, Quaternion, AnimationMixer, AnimationClip, MeshNormalMaterial, Texture, Scene, TorusKnotGeometry, BufferGeometry, InstancedBufferAttribute, UnsignedByteType, Matrix4, InstancedMesh, Object3D, Vector2, RGBAFormat, FloatType, DataTexture, NearestFilter, Mesh } from 'three'
+import { Color, MathUtils, Vector3, Euler, BufferAttribute, ShaderMaterial, Quaternion, Points, AnimationMixer, AnimationClip, MeshNormalMaterial, Texture, Scene, TorusKnotGeometry, BufferGeometry, InstancedBufferAttribute, UnsignedByteType, Matrix4, InstancedMesh, Object3D, Vector2, RGBAFormat, FloatType, DataTexture, NearestFilter, Mesh } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass.js'
-import { StarsMaterial } from '../materials'
+import { EyesMaterial, StarsMaterial } from '../materials'
 import WaterTexture from '../components/WaterTexture'
 import store from '../store'
 import { E } from '../utils'
@@ -11,6 +11,11 @@ import GlobalEvents from '../utils/GlobalEvents'
 import gsap from 'gsap'
 import { Gui } from '../utils/Gui'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
+import screenFxVert from '../../glsl/includes/screenFx/vert.glsl'
+import screenFxFrag from '../../glsl/includes/screenFx/frag.glsl'
 const _offsetMatrix = /* @__PURE__ */ new Matrix4()
 const _identityMatrix = /* @__PURE__ */ new Matrix4()
 export default class MainScene extends Scene {
@@ -27,6 +32,7 @@ export default class MainScene extends Scene {
 		this.randomValue = 1
 		this.hole = 2
 		this.randomArray = []
+		this.randomArrayParticles = []
 		this.angleArray = []
 		this.posArray = []
 		this.dampedProgress = 0
@@ -40,16 +46,13 @@ export default class MainScene extends Scene {
 		this.color2 = '#0044ff'
 		this.dummy = new Object3D()
 		this.targetAcceleration = new Vector3()
+		this.composer = new EffectComposer(store.WebGL.renderer)
+		this.composer.setSize(store.window.w, store.window.h)
 		E.on('App:start', () => {
 			this.build()
+			this.buildPasses()
 			this.addEvents()
 			store.Gui = new Gui()
-
-			this.renderPass = new RenderPass(this, store.camera)
-			// this.renderPass.clear = false
-			// this.renderPass.clearDepth = false
-			this.renderPass.enabled = true
-			store.WebGL.composerPasses.add(this.renderPass, 1)
 
 			// const afterimagePass = new AfterimagePass()
 			// afterimagePass.uniforms.damp.value = 0
@@ -67,6 +70,33 @@ export default class MainScene extends Scene {
 		this.setTimeline()
 		this.setBlinkingAnim(39)
 		this.setSurprise()
+		this.setParticles()
+	}
+
+	buildPasses() {
+		this.renderScene = new RenderPass(this, store.camera)
+
+		this.fxaaPass = new ShaderPass(FXAAShader)
+		this.fxaaPass.material.uniforms.resolution.value.x = 1 / (store.window.w * store.WebGL.renderer.getPixelRatio())
+		this.fxaaPass.material.uniforms.resolution.value.y = 1 / (store.window.fullHeight * store.WebGL.renderer.getPixelRatio())
+
+		this.bloomPass = new UnrealBloomPass(new Vector2(store.window.w, store.window.fullHeight), 2.120, 1, 0.6)
+		this.bloomPass.enabled = true
+
+		this.screenFxPass = new ShaderPass(new ShaderMaterial({
+			vertexShader: screenFxVert,
+			fragmentShader: screenFxFrag,
+			uniforms: {
+				tDiffuse: { value: null },
+				uMaxDistort: { value: 0.251 },
+				uBendAmount: { value: -0.272 }
+			}
+		}))
+
+		this.composer.addPass(this.renderScene)
+		this.composer.addPass(this.fxaaPass)
+		this.composer.addPass(this.bloomPass)
+		// this.composer.addPass(this.screenFxPass)
 	}
 
 	setTimeline() {
@@ -107,7 +137,7 @@ export default class MainScene extends Scene {
 
 		this.computeBoneTexture()
 		const geometry = this.mesh.geometry
-		this.material = new StarsMaterial({
+		this.material = new EyesMaterial({
 			displaceText: this.waterTexture.texture,
 			uTextureSize: new Vector2(this.spread, this.spread),
 			uTexture: this.assets.textures.whale,
@@ -125,7 +155,6 @@ export default class MainScene extends Scene {
 		const rotateState = []
 		this.radiusVal = []
 		this.instanceMesh = new InstancedMesh(this.suzanne.geometry, this.material, this.count)
-		console.log(this.instanceMesh, new Matrix4())
 		for (let i = 0; i < this.count; i++) {
 			// PUT THEM IN GRID
 			const space = 2
@@ -153,7 +182,6 @@ export default class MainScene extends Scene {
 		this.instanceMesh.geometry.setAttribute('randomVal', new InstancedBufferAttribute(randomArray, 1))
 		this.instanceMesh.geometry.setAttribute('animationProgress', new InstancedBufferAttribute(animationProgress, 1))
 		this.instanceMesh.geometry.setAttribute('radiusVal', new InstancedBufferAttribute(radiusVal, 1))
-		console.log(rotateState)
 		this.instanceMesh.geometry.setAttribute('rotatePos', new InstancedBufferAttribute(rotatePosMatrix, 16))
 		this.instanceMesh.geometry.attributes.animationProgress.needsUpdate = true
 		this.instanceMesh.geometry.setAttribute('spherePosition', this.suzanneSphere.geometry.attributes.position)
@@ -166,6 +194,38 @@ export default class MainScene extends Scene {
 		const material = new MeshNormalMaterial()
 		this.present = new Mesh(geometry, material)
 		this.add(this.present)
+	}
+
+	setParticles() {
+		const geometry = new BufferGeometry()
+		const positions = new Float32Array(this.count * 3)
+		this.colors = new Float32Array(this.count * 3)
+		const rotateState = []
+		const rotateMatrix = new Float32Array(16)
+		for (let i = 0; i < this.count; i++) {
+			const i3 = i * 3
+
+			this.randomArrayParticles.push(
+				{
+					random1: Math.random(),
+					randomX: Math.random(),
+					randomY: Math.random()
+				}
+			)
+			positions[i3] = Math.random() * 20 - 10
+			positions[i3 + 1] = Math.random() * 20 - 10
+			positions[i3 + 2] = Math.random() * 20 - 10
+
+			rotateState.push(...rotateMatrix)
+		}
+
+		const rotatePosMatrix = new Float32Array(rotateState)
+		geometry.setAttribute('position', new BufferAttribute(positions, 3))
+		geometry.setAttribute('color', new BufferAttribute(this.colors, 3))
+		geometry.setAttribute('rotatePos', new BufferAttribute(rotatePosMatrix, 16))
+
+		this.points = new Points(geometry, new StarsMaterial())
+		this.add(this.points)
 	}
 
 	randomizeMatrix(i, matrix, x, y, z) {
@@ -228,7 +288,6 @@ export default class MainScene extends Scene {
 		// console.log(this.dampedProgressCamera)
 
 		this.rotationProgress = store.progress - this.dampedRotationProgress
-		console.log(store.progress, this.dampedRotationProgress)
 		if (store.acceleration) {
 			let tmp = new Vector3()
 
@@ -247,28 +306,14 @@ export default class MainScene extends Scene {
 		this.instanceMesh.material.uniforms.uTime.value = time
 		// store.camera.rotation.set(0, 0, 0)
 
-		const bones = this.bones
-		const boneInverses = this.boneInverses
-		const boneMatrices = this.boneMatrices
-		const boneTexture = this.boneTexture
-
-		// flatten bone matrices to array
-
-		for (let i = 0, il = bones.length; i < il; i++) {
-			// compute the offset between the current and the original transform
-
-			const matrix = bones[i] ? bones[i].matrixWorld : _identityMatrix
-			_offsetMatrix.multiplyMatrices(matrix, boneInverses[i])
-			_offsetMatrix.toArray(boneMatrices, i * 16)
-		}
-
-		if (boneTexture !== null) {
-			boneTexture.needsUpdate = true
-		}
 		if (store.acceleration) {
 			store.camera.rotation.set(0, 0, this.dampedProgressCamera * 1.5)
 		}
+
+		/// PARTICLES MOVEMENT
+
 		this.createRotatedMatrix1()
+		this.composer.render()
 	}
 
 	onResize = () => {
@@ -311,7 +356,6 @@ export default class MainScene extends Scene {
 		}
 		for (const key in glb) {
 			store.AssetLoader.loadGltf((`models/${glb[key]}`)).then((gltf, animation) => {
-				console.log(key, gltf)
 				this.assets.models[key] = gltf
 				if (gltf.parser.json.buffers[0].uri) {
 					this.loadBinary(gltf.parser.json.buffers[0].uri)
@@ -453,10 +497,8 @@ export default class MainScene extends Scene {
 			this.tempMatrix.push(...matrix.elements)
 		}
 		const rotatePosMatrix = new Float32Array(this.tempMatrix)
-		console.log(rotatePosMatrix)
 		this.instanceMesh.geometry.attributes.rotatePos.set(rotatePosMatrix)
 		this.instanceMesh.geometry.attributes.rotatePos.needsUpdate = true
-		console.log(this.instanceMesh.geometry.attributes.rotatePos)
 	}
 
 	createRotatedMatrix1() {
